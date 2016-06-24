@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="TagTextView">
+        <attr name="normal_background_color" format="reference"></attr>
+        <attr name="selected_background_color" format="reference"></attr>
+        <attr name="normal_text_color" format="color"></attr>
+        <attr name="selected_text_color" format="color"></attr>
+    </declare-styleable>
+
+    <declare-styleable name="RadarView">
+        <attr name="image_width" format="dimension"></attr>
+        <attr name="circle_margin" format="dimension"></attr>
+        <attr name="circle_width" format="dimension"></attr>
+        <attr name="circle_color" format="color"></attr>
+        <attr name="circle_colorx" format="color"></attr>
+        <attr name="circle_colorxx" format="color"></attr>
+        <attr name="circle_colorxxx" format="color"></attr>
+        <attr name="saner_color" format="color"></attr>
+        <attr name="default_image" format="reference"></attr>
+    </declare-styleable>
+</resources>
