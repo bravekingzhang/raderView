@@ -26,9 +26,28 @@ public class RecommentFriendsActivity extends BaseActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        mRadarView.start();
         mRadarView.setmImageUrl("http://p5.qhimg.com/t01ba4f7909f15de5fc.jpg");
     }
 }
 ```
 
-会启动一个线程去下载图片。下载好之后替换默认的图。
+~~会启动一个线程去下载图片。下载好之后替换默认的图。~~
+
+现在更新成使用glide加载图片，生成圆形图片，不在自己使用多线程下载图片，处理图片。代码如下：
+
+```java
+private void getBitmapFromGlide(String url){
+        ImageView imageView = new ImageView(getContext());
+        imageView.setLayoutParams(new ViewGroup.MarginLayoutParams((int)mBitmapWidth,(int)mBitmapWidth));
+        Glide.with(getContext()).load(url).asBitmap().centerCrop().transform(new RoundImageTransform(getContext())).into(new BitmapImageViewTarget(imageView) {
+            @Override
+            protected void setResource(Bitmap resource) {
+                mBitmap = resource;
+            }
+        });
+    }
+```
+唯一的不足时这里new了一个没用的ImageView对象，如果你有更加好的方法，请告诉我。
+
+
