@@ -1,6 +1,7 @@
 package com.brzhang.widget;
 
 import android.content.Context;
+import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -13,10 +14,17 @@ import android.graphics.Shader;
 import android.graphics.SweepGradient;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.support.v4.graphics.drawable.RoundedBitmapDrawable;
+import android.support.v4.graphics.drawable.RoundedBitmapDrawableFactory;
 import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ImageView;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.target.BitmapImageViewTarget;
+import com.tencent.campusx.R;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -35,29 +43,27 @@ public class RadarView extends View {
     private int     start           = 0;
     private RadarThread radarThread;
 
-    private Paint  mPaintBitmap;
-    private Paint  mPaintLine;
-    private Paint  mPaintCircle;
-    private Matrix matrix;
+    private Paint  mPaintBitmap;//换中间图片的画笔
+    private Paint  mPaintLine;//话圆圈的画笔
+    private Paint  mPaintCircle; //画雷达的画笔
+    private Matrix matrix; //重点在这了，通过矩阵变换，做出扫描效果。
 
-    private Bitmap mBitmap;
-    private Bitmap mCircleBitmap;
-    private float mBitmapWidth    = 150;
-    private float mCircleMargin   = 30;
-    private float mCircleWidth    = 2;
-    private int   mCircleColor    = Color.RED;
+    private Bitmap mBitmap; //用户自定义图片的圆角图
+    private float mBitmapWidth    = 150;//中心图片默认的宽度，这里是px
+    private float mCircleMargin   = 30;//距离宽度，默认是px
+    private float mCircleWidth    = 2;//圆圈的画笔宽度，默认px
+    private int   mCircleColor    = Color.RED; //最内层圈圈的颜色，下面依次
     private int   mCircleColorx   = Color.RED;
     private int   mCircleColorxx  = Color.RED;
     private int   mCircleColorxxx = Color.RED;
     private int   mScanColor      = Color.RED;
 
-    private Drawable mdefaultImage;
-    private Bitmap mDefaultBitmap;
-    private boolean  isBitMapLoadSuccess;
+    private int mdefaultImage;//默认设置的中心图片
+    private Bitmap mDefaultBitmap;//默认生成的中心图片的圆角图
 
 
-    float mWidth;
-    float mHeight;
+    float mWidth;//自定义控件的宽度px
+    float mHeight;//自定义控件的高度px
 
 
     public RadarView(Context context) {
@@ -72,6 +78,7 @@ public class RadarView extends View {
         super(context, attrs, defStyleAttr);
         TypedArray attributes = context.obtainStyledAttributes(attrs, R.styleable.RadarView, defStyleAttr, 0);
         attributes.recycle();
+        //注意这里拿到的dimen单位都会自动转换，比如你天的dp，实际上会转化为设备对应的px。
         mBitmapWidth = attributes.getDimension(R.styleable.RadarView_image_width, mBitmapWidth);
         mCircleMargin = attributes.getDimension(R.styleable.RadarView_circle_margin, mCircleMargin);
         mCircleWidth = attributes.getDimension(R.styleable.RadarView_circle_width, mCircleWidth);
@@ -80,7 +87,7 @@ public class RadarView extends View {
         mCircleColorxx = attributes.getColor(R.styleable.RadarView_circle_colorxx, mCircleColor);
         mCircleColorxxx = attributes.getColor(R.styleable.RadarView_circle_colorxxx, mCircleColor);
         mScanColor = attributes.getColor(R.styleable.RadarView_saner_color, mScanColor);
-        mdefaultImage = attributes.getDrawable(R.styleable.RadarView_default_image);
+        mdefaultImage = attributes.getResourceId(R.styleable.RadarView_default_image,0);
 
         initView();
     }
@@ -98,20 +105,15 @@ public class RadarView extends View {
         //mPaintCircle.setStyle(Paint.Style.STROKE);
         mPaintCircle.setAntiAlias(true);
         matrix = new Matrix();
-        start();
-
-        if (mdefaultImage != null) {//生成默认图片
-            new DefaultCircleThread().start();
+        //start();
+        if (mdefaultImage != 0) {//生成默认图片
+            getBitmapFromGlide(mdefaultImage);
         }
-    }
-
-    public String getmImageUrl() {
-        return mImageUrl;
     }
 
     public void setmImageUrl(String mImageUrl) {
         this.mImageUrl = mImageUrl;
-        new ImageDownLoadThread().start();
+        getBitmapFromGlide(this.mImageUrl);
     }
 
     @Override
@@ -130,17 +132,17 @@ public class RadarView extends View {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         canvas.translate(mWidth / 2 - mBitmapWidth / 2, mHeight / 2 - mBitmapWidth / 2);
-        if (isBitMapLoadSuccess && mBitmap != null) {
+        if (mBitmap != null) {
             mPaintBitmap.reset();
-            // 通过Bitmap和指定x,y方向的平铺方式构造出BitmapShader对象
+           /* // 通过Bitmap和指定x,y方向的平铺方式构造出BitmapShader对象
             BitmapShader mBitmapShader = new BitmapShader(mBitmap, Shader.TileMode.CLAMP,
                     Shader.TileMode.CLAMP);
             // 将BitmapShader设置到当前的Paint对象中
             mPaintBitmap.setShader(mBitmapShader);
 
-            canvas.drawCircle(mBitmapWidth / 2, mBitmapWidth / 2, mBitmapWidth / 2, mPaintBitmap);
+            canvas.drawCircle(mBitmapWidth / 2, mBitmapWidth / 2, mBitmapWidth / 2, mPaintBitmap);*/
 
-            //canvas.drawBitmap(mBitmap,  - mBitmapWidth / 2,  - mBitmapWidth / 2, mPaintBitmap);//透明绘制成 黑色，妈蛋
+            canvas.drawBitmap(mBitmap,  0,  0, mPaintBitmap);
 
         }else if(mDefaultBitmap != null){
             mPaintBitmap.reset();
@@ -192,85 +194,25 @@ public class RadarView extends View {
     }
 
 
-    private Bitmap drawableToBitmap(Drawable drawable) {
-        if (drawable instanceof BitmapDrawable) {
-            return ((BitmapDrawable) drawable).getBitmap();
-        } else {
-            int width = drawable.getIntrinsicWidth();
-            int height = drawable.getIntrinsicHeight();
-            Bitmap bitmap = Bitmap.createBitmap(width, height,
-                    Bitmap.Config.ARGB_8888);
-            Canvas canvas = new Canvas(bitmap);
-            drawable.setBounds(0, 0, (int) mBitmapWidth, (int) mBitmapWidth);
-            drawable.draw(canvas);
-            return bitmap;
-        }
-    }
-
-    private Bitmap createCircleBitmap() {
-        if (mCircleBitmap == null) {
-            mCircleBitmap = Bitmap.createBitmap((int) mBitmapWidth, (int) mBitmapWidth,
-                    Bitmap.Config.ARGB_8888);
-            Canvas canvas = new Canvas(mCircleBitmap);
-
-            Paint paint = new Paint();
-            paint.setStyle(Paint.Style.FILL);
-            canvas.drawCircle(mBitmapWidth / 2, mBitmapWidth / 2, mBitmapWidth / 2, paint);
-        }
-        return mCircleBitmap;
-    }
-
-
-    private static Bitmap bitmapFromUrl(String url) throws IOException {
-
-        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
-        connection.connect();
-        InputStream input = connection.getInputStream();
-        return BitmapFactory.decodeStream(input);
-    }
-
-    class DefaultCircleThread extends Thread{
-        @Override
-        public void run() {
-            super.run();
-            mDefaultBitmap = drawableToBitmap(mdefaultImage);
-        }
-    }
-
-    class ImageDownLoadThread extends Thread {
-
-        @Override
-        public void run() {
-            if (!TextUtils.isEmpty(mImageUrl)) {
-                try {
-                    Bitmap bitmap = bitmapFromUrl(mImageUrl);
-                    int width = bitmap.getWidth();
-                    int height = bitmap.getHeight();
-                    // 计算缩放比例
-                    float scaleWidth = mBitmapWidth / width;
-                    float scaleHeight = mBitmapWidth / height;
-                    Matrix matrix = new Matrix();
-                    matrix.postScale(scaleWidth, scaleHeight);
-                    // 得到新的图片
-                    mBitmap = Bitmap.createBitmap(bitmap, 0, 0, width, height, matrix, true);
-
-                    // 这种方式绘制透明区域被绘制成黑色。start
-                    /*Bitmap maskBitmap = getCircleBitmap();
-                    Canvas canvas = new Canvas(mBitmap);
-                    bitmap.recycle();
-                    mPaintBitmap.reset();
-                    mPaintBitmap.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DST_IN));
-                    canvas.drawBitmap(maskBitmap, 0, 0, mPaintBitmap);
-                    mPaintBitmap.setXfermode(null);*/
-                    // 这种方式绘制透明区域被绘制成黑色。end
-                    isBitMapLoadSuccess = true;
-                } catch ( IOException e ) {
-                    e.printStackTrace();
-                    mBitmap = null;
-                    isBitMapLoadSuccess = false;
-                }
+    private void getBitmapFromGlide(int resource){
+        ImageView imageView = new ImageView(getContext());
+        imageView.setLayoutParams(new ViewGroup.MarginLayoutParams((int)mBitmapWidth,(int)mBitmapWidth));
+        Glide.with(getContext()).load(resource).asBitmap().centerCrop().transform(new RoundImageTransform(getContext())).into(new BitmapImageViewTarget(imageView) {
+            @Override
+            protected void setResource(Bitmap resource) {
+                mDefaultBitmap = resource;
             }
-        }
+        });
+    }
+    private void getBitmapFromGlide(String url){
+        ImageView imageView = new ImageView(getContext());
+        imageView.setLayoutParams(new ViewGroup.MarginLayoutParams((int)mBitmapWidth,(int)mBitmapWidth));
+        Glide.with(getContext()).load(url).asBitmap().centerCrop().transform(new RoundImageTransform(getContext())).into(new BitmapImageViewTarget(imageView) {
+            @Override
+            protected void setResource(Bitmap resource) {
+                mBitmap = resource;
+            }
+        });
     }
 
     class RadarThread extends Thread {
@@ -282,7 +224,7 @@ public class RadarView extends View {
                     @Override
                     public void run() {
                         start = start + 1;
-                        matrix.setRotate(start, 0, 0); //因为我对画笔进行了平移
+                        matrix.setRotate(start, 0, 0); //因为我对画笔进行了平移，0，0表示绕圆的中心点转动
                         RadarView.this.invalidate();
                     }
                 });
