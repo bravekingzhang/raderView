@@ -77,7 +77,7 @@ public class RadarView extends View {
     public RadarView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         TypedArray attributes = context.obtainStyledAttributes(attrs, R.styleable.RadarView, defStyleAttr, 0);
-        attributes.recycle();
+        
         //注意这里拿到的dimen单位都会自动转换，比如你天的dp，实际上会转化为设备对应的px。
         mBitmapWidth = attributes.getDimension(R.styleable.RadarView_image_width, mBitmapWidth);
         mCircleMargin = attributes.getDimension(R.styleable.RadarView_circle_margin, mCircleMargin);
@@ -88,7 +88,7 @@ public class RadarView extends View {
         mCircleColorxxx = attributes.getColor(R.styleable.RadarView_circle_colorxxx, mCircleColor);
         mScanColor = attributes.getColor(R.styleable.RadarView_saner_color, mScanColor);
         mdefaultImage = attributes.getResourceId(R.styleable.RadarView_default_image,0);
-
+		attributes.recycle();
         initView();
     }
 
