@@ -3,6 +3,10 @@
 
 ![Paste_Image.png](http://upload-images.jianshu.io/upload_images/1019822-a7e3c3d95b0f0b7b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
+**最近更新了一个 水波纹的搜索效果**
+
+![Paste_Image.png](http://upload-images.jianshu.io/upload_images/1019822-689f935e935b4e6a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
 
 ###目前已经支持在xml中配置：
 1. 设置默认中间图片
